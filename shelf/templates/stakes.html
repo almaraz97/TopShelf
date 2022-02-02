@@ -2,7 +2,7 @@
 {% block content %}
 <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js" crossorigin="anonymous"></script>
 <script type="text/javascript">
-
+ 
 async function get_item_info(contract, index, web3){
     let item = await contract.methods.listings(index).call();
     let owner = await contract.methods.ownerOf(index).call();
