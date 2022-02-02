@@ -1,0 +1,78 @@
+{% extends 'layout.html' %}
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js" crossorigin="anonymous"></script>
+<script type="text/javascript">
+    async function loadSettings(){
+        
+    }
+    async function loadPageData(){
+        document.getElementsByTagName('body')[0].style = 'background: #0d1117;';
+
+        const web3 = new Web3("http://localhost:7545")
+        let contract, token
+
+        // Load contract
+        let contract_address = '{{ recipe_address }}'; let abi = JSON.parse('{{ abi|safe }}');
+        let token_address = '{{ token_address }}'; let tabi = JSON.parse('{{ tabi|safe }}');
+        try {
+            contract = new web3.eth.Contract(abi, contract_address);
+            document.Contract = contract;
+            token = new web3.eth.Contract(tabi, token_address);
+            window.shelf = contract;
+            window.token = token;
+        } catch (e) {
+            console.log('error', e);
+        }
+        loadSettings(contract);
+        // transferFee, stakeLeaseReward, unstakePenalty; 
+        let listFee = await contract.methods.listFee().call();
+        let foreclosureFee = await contract.methods.foreclosureFee().call();
+        let stakerReward = await contract.methods.stakerReward().call();
+        let buyReward = await contract.methods.buyReward().call();
+        let defaultLeaseDuration = await contract.methods.defaultLeaseDuration().call();
+        let renewalRatio = await contract.methods.renewalRatio().call();
+        listFee = web3.utils.fromWei(listFee, 'ether')
+        foreclosureFee = web3.utils.fromWei(foreclosureFee, 'ether')
+
+
+        body = document.getElementById('main');  // document.createElement('div');
+        body.className = 'content-section row';
+        body.style = 'background-color:#000000;';
+
+        _listfee = document.createElement('h5');
+        _listfee.innerText = 'List Fee: '+ listFee+' Eth per listing';
+        _listfee.className = 'col-12';
+        body.appendChild(_listfee);
+
+        _foreclosureFee = document.createElement('h5');
+        _foreclosureFee.innerText = 'Foreclosure Fee: '+foreclosureFee+' TOP(s) to foreclose someone elses listings';
+        _foreclosureFee.className = 'col-12';
+        body.appendChild(_foreclosureFee);
+
+        _buyReward = document.createElement('h5');
+        _buyReward.innerText = 'Buy Reward: '+buyReward+' TOP(s) per Eth revenue';
+        _buyReward.className = 'col-12';
+        body.appendChild(_buyReward);
+
+        _stakerReward = document.createElement('h5');
+        _stakerReward.innerText = 'Staker Reward: '+stakerReward+' TOP(s) per Eth revenue by total stake';
+        _stakerReward.className = 'col-12';
+        body.appendChild(_stakerReward);
+
+        _defaultLeaseDuration = document.createElement('h5');
+        _defaultLeaseDuration.innerText = 'Initial Lease Duration: '+defaultLeaseDuration+' second(s)';
+        _defaultLeaseDuration.className = 'col-12';
+        body.appendChild(_defaultLeaseDuration);
+
+        _renewalRatio = document.createElement('h5');
+        _renewalRatio.innerText = 'Renewal Ratio: '+renewalRatio+' second(s) per TOP';
+        _renewalRatio.className = 'col-12';
+        body.appendChild(_renewalRatio);
+    }
+
+loadPageData()
+</script>
+
+<div id="main"></div>
+
+{% endblock content %}

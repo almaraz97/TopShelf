@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}">
+<!--  <link rel="icon" href="static/icons/GH_WhiteLogo.png" sizes="32x32" type="image/png">-->
+  {% if title %}
+    <title>TSM - {{ title }}</title>
+  {% else %}
+    <title>TopShelf Marketplace</title>
+  {% endif %}
+</head>
+<script>
+  async function get_connected_account(){
+      let accounts = await ethereum.request({method: 'eth_accounts'});
+      return accounts[0];
+  }
+  async function get_balance(acc){
+      return await ethereum.request({ method: 'eth_requestAccounts', params: [acc, 'latest']});
+  }
+  async function get_contract_balance(contract, acc){
+      return await contract.methods.balanceOf(acc).call();
+  }
+  </script>
+<body>
+
+<header class="site-header d-md-block d-lg-block d-xl-block">
+  <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
+    <div class="container px-0">
+      <!-- GroceryHero Icon -->
+<!--      <a class="mr-1" style="text-decoration: none;" href="{{ url_for('nft') }}"><img class="mb-2" src="{{ url_for('static', filename='icons/GH_WhiteLogo.png')  }}" width="30" height="30"> <img class="mr-1" src="{{ url_for('static', filename='icons/GH_WhiteWordmark.png')  }}" width="120"></a>-->
+      <!-- The hamburger menu toggle -->
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <!-- Navbar Left Side -->
+      <div class="collapse navbar-collapse" id="navbarToggle">
+        <div class="navbar-nav mr-auto">
+          <a class="nav-item nav-link pl-0" href="{{ url_for('nft') }}"><h3 class="mb-0">TopShelf Market</h3></a>
+        </div>
+        <!-- Navbar Right Side -->
+        <div class="navbar-nav" id="rightBar">
+          <div class="btn btn-sm btn-outline-dark" id="balance"><div class="nav-item nav-link" id="tokenBalance">Rewards: 0 TOPS</div></div>
+          <a class="nav-item nav-link" onclick="await window.ethereum.enable()" href="" id="notConnected">Connect Account</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<!--Mobile Navbar Top-->
+<!--{#<nav class="navbar navbar-dark bg-steel fixed-top site-header d-sm-none row mx-auto navbar-expand">#}-->
+<!--{#  <div class="navbar-nav col p-0">#}-->
+<!--{#    {% if current_user.is_authenticated %}#}-->
+<!--{#      {% if current_user.recipes|length <=80 %}#}-->
+<!--{#        <a class="nav-item nav-link col-sm text-center" href="{{ url_for('recipes.new_recipe', link=0) }}"><img src="{{ url_for('static', filename='icons/add_recipe.png')  }}" height="35px" width="35px"></a>#}-->
+<!--{#      {% else %}#}-->
+<!--{#        <a class="nav-item nav-link col-sm text-center" href="{{ url_for('users.account') }}">Upgrade</a>#}-->
+<!--{#      {% endif %}#}-->
+<!--{#      <a class="nav-item nav-link col-sm text-center" href="{{ url_for('aisles.new_aisle') }}"><img src="{{ url_for('static', filename='icons/add_aisle.png')  }}" height="35px" width="35px"></a>#}-->
+<!--{#      <a class="nav-item nav-link col-sm text-center" href="{{ url_for('pantry.new_shelf') }}"><img src="{{ url_for('static', filename='icons/add_pantry.png')  }}" height="35px" width="35px"></a>#}-->
+<!--{#      <a class="nav-item nav-link col-sm text-center" href="{{ url_for('main.about') }}"><img src="{{ url_for('static', filename='icons/about.png')  }}" height="35px" width="35px"></a>#}-->
+<!--{#      <a class="nav-item nav-link col-sm text-center" href="{{ url_for('users.auth_logout') }}"><img src="{{ url_for('static', filename='icons/logout.png')  }}" height="35px" width="35px"></a>#}-->
+<!--{#    {% else %}#}-->
+<!--{#      <a class="nav-item nav-link col-sm text-center" href="{{ url_for('users.auth_login') }}">Login/Register</a>#}-->
+<!--{#      <a class="nav-item nav-link col-sm text-center" href="{{ url_for('users.authregister') }}">Register</a>#}-->
+<!--{#    {% endif %}#}-->
+<!--{#  </div>#}-->
+<!--{#</nav>#}-->
+
+<script>
+// async function connect(){
+//     return window.ethereum.enable()
+// }
+// async function loadTokens(){
+//     return window.ethereum.enable()
+// }
+async function loadBar(){
+    // console.log(ethereum.isConnected())
+    if (ethereum.isConnected()){
+      let connect = document.getElementById('notConnected');
+      // console.log(connect)
+      connect.style = 'display:none;';
+    }
+    else{
+        window.ethereum.enable();
+    }
+}
+loadBar()
+</script>
+<main role="main" class="container" id="top">
+  <div class="row">
+    <div class="" id="alert-bar">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}   <!-- todo Have flashed items auto-close-->
+            <div class="alert alert-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+    {% block content %}{% endblock content %}
+<!--    <div class="col-md-4 mb-5 pb-4">-->
+<!--      <div class="content-section" style="border-radius: 5px; border-color: #008070/* #28a745 */; background: transparent;box-shadow:0 0 0 0" role="alert"> {#style="background-color: #ced0d7" style="background-color: #747c9c" #}-->
+<!--        <h4 class="" style="color: #28a745;">High Quality NFTs</h4>-->
+<!--        <p style="color: #28a745;">Welcome <b><u><span id="address"></span></u></b> to Top Shelf NFT marketplace!</p>-->
+<!--        <p style="color: #28a745;">Get paid to curate NFTs!</p>-->
+<!--        <ol style="color: #28a745;">-->
+<!--          <li>Buy GrocerHero tokens (GHT) through the bonding curve</li>-->
+<!--          <li>Mint a recipe or stake your GHT to join the community</li>-->
+<!--          <li>Earn rewards by supporting recipes you like using your GHT</li>-->
+<!--          <li>Spent GHT goes to recipe stakeholders and raffles rewards!</li>-->
+<!--        </ol>-->
+<!--      </div>-->
+<!--    </div>-->
+  </div>
+  <!--Mobile Navbar Bottom-->
+<!--{#  <nav class="navbar navbar-dark bg-steel fixed-bottom site-header d-sm-none navbar-expand row mx-auto">#}-->
+<!--{#    <div class="navbar-nav col p-0"> &lt;!&ndash;mr-auto&ndash;&gt;#}-->
+<!--{#      <a class="nav-item nav-link col-sm text-center" style="float:inline" href="{{ url_for('main.home') }}"><img src="{{ url_for('static', filename='icons/home.png')  }}" height="35px" width="35px"></a>#}-->
+<!--{#      <a class="nav-item nav-link col-sm text-center" style="float:inline" href="{{ url_for('pantry.pantry_page') }}"><img src="{{ url_for('static', filename='icons/pantry.png')  }}" height="35px" width="35px"></a>#}-->
+<!--{#      <a class="nav-item nav-link col-sm text-center" style="float:inline" href="{{ url_for('recipes.recipes_page') }}"><img src="{{ url_for('static', filename='icons/recipes.png')  }}" height="35px" width="35px"></a>#}-->
+<!--{#      <a class="nav-item nav-link col-sm text-center" style="float:inline" href="{{ url_for('aisles.aisles_page') }}"><img src="{{ url_for('static', filename='icons/aisles.png')  }}" height="35px" width="35px"></a>#}-->
+<!--{#      {% if current_user.is_authenticated %}#}-->
+<!--{#      <a class="nav-item nav-link col-sm text-center" href="{{ url_for('users.account') }}"><img src="{{ url_for('static', filename='icons/account.png')  }}" height="35px" width="35px"></a>#}-->
+<!--{#      {% endif %}#}-->
+<!--{#    </div>#}-->
+<!--{#  </nav>#}-->
+</main>
+<!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js" crossorigin="anonymous"></script>
+</body>
+</html>

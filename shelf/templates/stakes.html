@@ -1,0 +1,270 @@
+{% extends 'layout.html' %}
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js" crossorigin="anonymous"></script>
+<script type="text/javascript">
+
+async function get_item_info(contract, index, web3){
+    let item = await contract.methods.listings(index).call();
+    let owner = await contract.methods.ownerOf(index).call();
+    let _name = await item.name;
+    let description = await item.description;
+    let URI = await item.URI;
+    let price = await item.price;
+    let stock = await item.stock;
+    let timesPurchased = await item.timesPurchased;
+    let leaseDuration = await item.leaseDuration;
+    let dateCreated = await item.dateCreated;
+    console.log(dateCreated);
+    let expiry = Math.round((((parseInt(dateCreated)+parseInt(leaseDuration))*1000) - Date.now())/60000); //;
+    dateCreated = new Date(dateCreated*1000);
+    dateCreated = dateCreated.getUTCDate() + '/' + (dateCreated.getUTCMonth() + 1)+ '/' + dateCreated.getUTCFullYear();
+    return [_name, description, URI, web3.utils.fromWei(price), stock, timesPurchased, owner, expiry, dateCreated]
+}
+async function get_user_stakes(contract, account){
+    numStaked = await contract.methods.stakerItemCount(account).call();
+    let stakes = []; let i=0;
+    while (stakes.length<numStaked){ // Go through item index until all item stakes are retrieved
+        let stakeId = await contract.methods.getstakerItemStakeId(account, i).call();
+        if (stakeId!=0){
+          let stakeAmount = await contract.methods.getItemStakeIdStake(i, stakeId).call();
+          stakes.push({'itemId': i, 'stakeAmount': stakeAmount});
+        }
+        i+=1;
+    }
+    return stakes; // List of dictionaries
+}
+async function add_item_stake(contract, acc, id){
+    return await contract.methods.addItemStake(acc, id, 10).call();
+}
+
+async function loadPageData() {
+  document.getElementsByTagName('body')[0].style = 'background: #0d1117;';
+  // Get account
+  if (typeof window.ethereum !== 'undefined') { 
+      let account = await get_connected_account();
+      if (typeof account){
+          let connect = document.getElementById('notConnected');
+          connect.style = 'display:none;';
+      } else{
+          window.ethereum.enable();
+      }
+
+      const web3 = new Web3("http://localhost:7545")
+      let contract, token, totalSupply, _name, description, URI, stock, timesPurchased, owner, expiry, dateCreated;
+      // Check if account is detected, then load balance setStates, else push alert
+      if (typeof account !== 'undefined' && account !== []) {  
+          let balance = await get_balance();
+          console.log({account: account, balance: balance})
+      } else {
+          window.alert('Please sign in with MetaMask');
+      }
+      // Load contract
+      let contract_address = '{{ recipe_address }}'; let abi = JSON.parse('{{ abi|safe }}');
+      let token_address = '{{ token_address }}'; let tabi = JSON.parse('{{ tabi|safe }}');
+      try {
+          contract = new web3.eth.Contract(abi, contract_address);
+          token = new web3.eth.Contract(tabi, token_address);
+          window.shelf = contract;
+          window.token = token;
+      } catch (e) {
+          console.log('error', e);
+      }
+
+      // Get user staked items
+      if (true) { //typeof contract !== 'undefined'
+          stakes = await get_user_stakes(contract, account);
+          console.log(stakes);
+
+          document.getElementById('userBalance').innerText = 'You have ' + stakes.length + ' stake(s)';
+          // Get token balance
+          if (typeof account !=='undefined') {
+              let balance = await token.methods.balanceOf(account).call()
+              balance = String(web3.utils.fromWei(balance.toString())).slice(0, 7);
+              console.log(balance);
+              document.getElementById('tokenBalance').innerText = 'Balance: ' + balance + ' TOPS';
+          }
+          // Get stakes
+          if (stakes.length > 0) {  
+              document.getElementById('noRecipes').remove();
+              let grid = document.getElementById('userNFTs');
+              let title, info, buyButton, body, listingCard, image, footer, row;
+              let num_rows = Math.ceil(stakes.length/4);
+              let row_num = 1; console.log(num_rows);
+              
+              for(let i=0; i<stakes.length; i++){
+                if (i===0){
+                    row = document.createElement('div');
+                    row.className = 'row mx-1';
+                }
+                try{
+                  let itemId, amount;
+                  itemId = stakes[i]['itemId']; amount = stakes[i]['stakeAmount']
+                  console.log(itemId, amount);
+                  [_name, description, URI, price, stock, timesPurchased, owner, expiry, dateCreated] = await get_item_info(contract, itemId, web3);
+
+                  title = document.createElement('h5');
+                  title.className = 'card-title';
+                  // {#title.style = 'border-bottom: 1px solid #004085;'#}
+                  title.innerText = _name;
+
+                  info = document.createElement('p');
+                  info.className = 'card-text';
+                  // if (expiry <0){expiry = 'EXPIRED';}else{expiry = expiry+'sec';}
+                  info.innerText = description+'\n\nID: '+i+'\nPrice: '+price+'\nTimes purchased: '+timesPurchased+'\nCreated: '+dateCreated + '\nOwner: '+owner.slice(0,10)+'...' +'\nExpires in: '+expiry+'sec'
+
+                  buyButton = document.createElement('button');
+                  buyButton.className = 'btn btn-outline-info btn-block'; // add javascript to sign metamask transaction
+                  buyButton.style = 'background: #0d1117';
+                  buyButton.innerText = 'Stake: '+web3.utils.fromWei(String(amount), 'ether');
+                  // buyButton.onclick = function(){buyItem(contract, account, i)};
+
+                  body = document.createElement('div');
+                  body.className = 'card-body';
+                  body.appendChild(title);
+                  body.appendChild(info);
+                  body.appendChild(buyButton);
+
+                  listingCard = document.createElement('card');
+                  listingCard.className = 'card text-white bg-dark mb-3';
+                  // listingCard.style = 'max-width: 18rem;' // 'color:#004085; background-color:#cce5ff; border-color:#b8daff;'
+                  listingCard.id = i;
+                  image = document.createElement('img');
+                  image.className = 'card-img-top';
+                  if (URI==='truck.png'){image.src = 'https://static01.nyt.com/images/2021/03/12/arts/11nft-auction-cryptopunks-print/11nft-auction-cryptopunks-print-jumbo.jpg?quality=75&auto=webp'} else{image.src = URI;}
+                  image.style = 'min-width: 258.5px; max-height: 260px; mx-auto; display: block;'
+                  image.innerText = _name;
+                  listingCard.appendChild(image);
+                  listingCard.appendChild(body);
+
+                  footer = document.createElement('div');
+                  footer.className = 'card-footer';
+                  // footer.innerText = buyButton; <!-- 'Owner: '+ owner.slice(2, 9)+'...';-->
+                  footer.appendChild(buyButton);
+                  listingCard.appendChild(footer);
+                  row.appendChild(listingCard);
+
+                  if ((i+1)%4===0){  // last card was added to row, add row to grid
+                      grid.appendChild(row);
+                      row = document.createElement('div');
+                      row.className = 'row mx-1';
+                      // row.id = row_num;
+                      // row_num += 1;
+                      num_rows -= 1;
+                  }
+                } catch (e) {
+                    console.log(e);
+                }
+              }
+              if (num_rows>=1){
+                  // row.className = 'row';
+                  grid.appendChild(row);
+              }
+          }
+      }
+  } else {  //if MetaMask not exists push alert
+      window.alert('Please install MetaMask')
+  }
+}
+
+loadPageData()
+</script>
+<div class="mb-4 col-12">
+  <h1 style="display: inline">Welcome to TopShelf Curation Market!</h1>
+  <a href="{{ url_for('mint_nft') }}" class="btn btn-info" style="display: inline; float: right;">New Listing</a>
+</div>
+<!--Search bar with button-->
+<div style="margin-bottom: 15px;" class="col-12">
+  <form action="" method="POST">
+    <div class="input-group flex-nowrap">
+        {% if friends is defined %}{% set search_str = "Recipe Name" %}{% else %}{% set search_str = "Item Name" %}{% endif %}
+        <input type="text" class="form-control" placeholder="{{ search_str }}" name="search">
+      <div class="input-group-prepend">
+        <button class="input-group-text" id="addon-wrapping">Search</button>
+      </div>
+    </div>
+  </form>
+</div>
+<!-- <div class="row  mx-0 mb-1 mt-4 col-12">
+  <a class="col-4 p-0 btn btn-lg btn-info" style="border-radius: 3px 0 0 3px;" href="{{ url_for('nft') }}">Your Listings</a>
+  <a class="col-4 p-0 btn btn-lg btn-info" style="border-radius: 0 0 0 0;" href="{{ url_for('nft') }}">Recent Listings</a>
+  <a class="col-4 p-0 btn btn-lg btn-info" style="border-radius: 0 3px 3px 0;" href="{{ url_for('nft') }}">Top Listings</a>
+</div> -->
+<!-- Sort By Buttons -->
+<div class="d-none d-sm-none d-md-flex d-lg-flex col-12">
+<div class="btn-group btn-sm d-inline-block mb-2 mt-2 p-0" style="width: 100%;">
+  <div class="d-inline">
+    <p class="text-muted float-left mb-0 pt-2" id="userBalance" style="font-size: 16px"></p>
+    <button type="button" class="px-3 btn btn-sm btn-outline-info dropdown-toggle float-right" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+     Sort By</button>
+      {% set select = 'color: #fff; text-decoration: none; background-color: #007bff;' %}
+    <div class="dropdown-menu">
+      <a class="dropdown-item" href="/">All</a>
+      <a class="dropdown-item" href="/stakes">Stakes</a>
+      <!-- <a class="dropdown-item" style="{% if sort == 'date' %}{{ select }}{% endif %}" href="">Most Recent</a>
+      <a class="dropdown-item" style="{% if sort == 'eaten' %}{{ select }}{% endif %}" href="">Most Bought</a>
+      <a class="dropdown-item" style="{% if sort == 'borrow' %}{{ select }}{% endif %}" href="">Most Renewed</a> -->
+    </div>
+  </div>
+</div>
+</div>
+<!-- Sort By Buttons Mobile -->
+<!--<div class="d-md-none d-lg-none d-xl-none btn-group btn-sm row p-0 mx-0 my-2" style="width: 100%">-->
+<!--  <button class="col-4 btn btn-sm btn-outline-secondary" style="border-radius:0.2rem;" onClick="document.getElementById('tool').scrollIntoView();">Recommender</button>-->
+<!--  <div class="col-4 px-2">-->
+<!--    <button type="button" class="btn btn-sm btn-block btn-outline-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">-->
+<!--     Sort By</button>-->
+<!--    <div class="dropdown-menu">-->
+<!--&lt;!&ndash;      {#<a class="dropdown-item" style="{% if sort == 'alpha' or sort == 'none' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort='alpha', types=types, page=1, view=view) }}">Alphabetical</a>#}&ndash;&gt;-->
+<!--&lt;!&ndash;      {#<a class="dropdown-item" style="{% if sort == 'hot' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort='hot', types=types,  page=1, view=view) }}">Trending</a>#}&ndash;&gt;-->
+<!--&lt;!&ndash;      {#<a class="dropdown-item" style="{% if sort == 'date' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort='date', types=types, page=1, view=view) }}">Most Recent</a>#}&ndash;&gt;-->
+<!--&lt;!&ndash;      {#<a class="dropdown-item" style="{% if sort == 'eaten' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort='eaten', types=types, page=1, view=view) }}">Most Eaten</a>#}&ndash;&gt;-->
+<!--&lt;!&ndash;      {#<a class="dropdown-item" style="{% if sort == 'borrow' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort='borrow', types=types, page=1, view=view) }}">Most Borrowed</a>#}&ndash;&gt;-->
+<!--    </div>-->
+<!--  </div>-->
+<!--  <div class="col-4 px-0">-->
+<!--    <button type="button" class="btn btn-block btn-sm btn-outline-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">-->
+<!--     Recipe Type</button>-->
+<!--    <div class="dropdown-menu">-->
+<!--&lt;!&ndash;    {#<a class="dropdown-item" style="{% if types == 'all' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort=sort, types='all', page=page, view=view) }}">All</a>#}&ndash;&gt;-->
+<!--&lt;!&ndash;    {#<a class="dropdown-item" style="{% if types == 'Breakfast' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort=sort, types='Breakfast', page=1, view=view) }}">Breakfast</a>#}&ndash;&gt;-->
+<!--&lt;!&ndash;    {#<a class="dropdown-item" style="{% if types == 'Lunch' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort=sort, types='Lunch', page=1, view=view) }}">Lunch</a>#}&ndash;&gt;-->
+<!--&lt;!&ndash;    {#<a class="dropdown-item" style="{% if types == 'Dinner' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort=sort, types='Dinner', page=1, view=view) }}">Dinner</a>#}&ndash;&gt;-->
+<!--&lt;!&ndash;    {#<a class="dropdown-item" style="{% if types == 'Snack' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort=sort, types='Snack', page=1, view=view) }}">Snack</a>#}&ndash;&gt;-->
+<!--&lt;!&ndash;    {#<a class="dropdown-item" style="{% if types == 'Dessert' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort=sort, types='Dessert', page=1, view=view) }}">Dessert</a>#}&ndash;&gt;-->
+<!--&lt;!&ndash;    {#<a class="dropdown-item" style="{% if types == 'Other' %}{{ select }}{% endif %}" href="{{ url_for('recipes.recipes_page', sort=sort, types='Other', page=1, view=view) }}">Other</a>#}&ndash;&gt;-->
+<!--    </div>-->
+<!--  </div>-->
+<!--  <p class="text-muted float-left mb-0 pt-2" id="userBalance" style="font-size: 16px"></p>-->
+<!--</div>-->
+<div id="userNFTs" class="card-deck mt-2 col-12"></div>
+<!-- No recipes button -->
+{% if nfts is not defined or nfts|length < 1 %}
+  <div class="mt-4 mb-2 col-12" id="noRecipes">
+    <div class="card-header p-0" id="headingMenu">
+      <h5 class="mb-0">
+        <button style=".collapse" class="btn btn-light btn-block" data-toggle="collapse" data-target="#collapseMenu"  aria-controls="collapseMenu">
+          {% set empty_message, from_empty = 'No stakes have been made yet.', 'listings' %}
+           <a style="text-decoration:none; color: grey;" href="{{ from_empty }}">{{ empty_message }}</a>
+        </button>
+      </h5>
+    </div>
+  </div>
+{% endif %}
+{% if nfts %}
+  <button class="btn btn-sm btn-secondary mb-4 col-12" id="tool" style="float: right;" onClick="document.getElementById('top').scrollIntoView();">Go to Top</button>
+  {% for page_num in nfts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+    {% if page_num %}
+      {% if nfts.page == page_num %}{% set state = 'btn-success' %}{% else %}{% set state = 'btn-outline-success' %}{% endif %}
+        <a class="btn {{ state }} mb-4" href="{{ url_for('nft', page=page_num) }}">{{ page_num }}</a>
+    {% else %}
+      ...
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+
+{% endblock content %}
+<!--{#<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js" crossorigin="anonymous"></script>#}-->
+<!--{#<script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>#}-->
+<!--{#<script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>#}-->
+
