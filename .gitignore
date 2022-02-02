@@ -1,5 +1,5 @@
 /.DS_Store
 /.vscode
-/run.py
-/shelf
 /venv
+shelf/Stake.sol
+shelf/__pycache__
