@@ -1,4 +1,5 @@
 /.DS_Store
 /.vscode
-/venv
-shelf/__pycache__
+src/__pycache__
+node_modules
+Stake.sol

@@ -6,7 +6,7 @@ pragma solidity ^0.8.6;
 contract TopToken {
     string public name;
     string public symbol;
-    address public deployer;  // Give privileges to TopShelf
+    address public admin;  // Give privileges to TopShelf
     uint256 public decimals;
     uint256 private _transferFee;
     uint256 private _totalSupply;
@@ -17,13 +17,13 @@ contract TopToken {
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
     event MinterChanged(address indexed from, address indexed to);
 
-    modifier onlyAdmin(){require(msg.sender==deployer, 'Error, only deployer'); _;}
+    modifier onlyAdmin(){require(msg.sender==admin, 'Error, only admin'); _;}
     modifier notNullAddress(address _address){require(_address!=address(0), 'Error, using null address not allowed'); _;}
     constructor(string memory _name, string memory _symbol, uint256 _decimals, uint256 _fee){
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
-        deployer = msg.sender;
+        admin = msg.sender;
         _transferFee = _fee;
     }
     // READ FUNCTIONS
@@ -34,9 +34,9 @@ contract TopToken {
     // SET FUNCTIONS
     function setTransferFee(uint256 _fee) external onlyAdmin(){_transferFee = _fee;}
     // FUNCTIONS
-    function passMinterRole(address _recipeContract) public onlyAdmin() returns(bool){
-        deployer = _recipeContract;
-        emit MinterChanged(msg.sender, _recipeContract);
+    function passMinterRole(address topshelf) public onlyAdmin() returns(bool){
+        admin = topshelf;
+        emit MinterChanged(msg.sender, topshelf);
         return true;
     }
     function transfer(address to, uint256 value) public returns (bool) {
@@ -51,13 +51,13 @@ contract TopToken {
     function transferFrom(address from, address to, uint256 value) public returns (bool){
         // uint256 withFee = _transferFee << value;  // Total cost = value * 2**n (transfer loses 1/(2**n))
         // require(withFee <= _balances[from], "Error: Insufficient funds");
-        // require(((withFee <= _allowed[from][msg.sender]) || (msg.sender == deployer)), // Always allow TopShelf
+        // require(((withFee <= _allowed[from][msg.sender]) || (msg.sender == admin)), // Always allow TopShelf
         //     "Error: transferring more than approved");
         require(to != address(0), "Not to null");
 
         _balances[from] -= value;  // withFee
         _balances[to] = _balances[to] + value;
-        if (msg.sender != deployer){  // May be vulnerable
+        if (msg.sender != admin){  // May be vulnerable
             _allowed[from][msg.sender] -= value;  //withFee
         }
         emit Transfer(from, to, value);
@@ -105,8 +105,8 @@ contract TopToken {
     }
 
     function _burnFrom(address account, uint256 amount) internal {
-        require(amount <= _allowed[account][msg.sender] || msg.sender==deployer, "Amount to burn greater than approved");
-        if (msg.sender!=deployer){  // Allows burn from to reduce allowances if not called from admin
+        require(amount <= _allowed[account][msg.sender] || msg.sender==admin, "Amount to burn greater than approved");
+        if (msg.sender!=admin){  // Allows burn from to reduce allowances if not called from admin
             _allowed[account][msg.sender] = _allowed[account][msg.sender] - amount;
         }
         _burn(account, amount);
