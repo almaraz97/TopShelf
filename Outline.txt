@@ -1,13 +1,13 @@
 
-Selling Process
+Seller Process
 1. Pay ETH fee to list an item (NFT)
-2. Renew listings with TOPs
+2. Renew listings by burning TOPs
 3. Buyers pay you for owning NFTs
 
-Buying Process
-1. Buy items with ETH (own the NFT)
-2. Be rewarded TOPs for purchases
-3. Stake TOPs within listings
+Buyer Process
+1. Purchase items with ETH (own the NFT)
+2. Get rewarded TOPs for purchases
+3. Stake TOPs within listings for more TOPs
 
 Technical details
 - Listing items is by paying ETH to TopShelf contract
