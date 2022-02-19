@@ -18,14 +18,19 @@ Technical details
 
 
 Ideas:
-Have item transfers cost (in tokens then ?burnt)
-todo Have item transfer fees in tokens or ETH?
-todo Burn or receive tokens when foreclosing/renewing? (burning helps everyone, being sent helps contract)
-todo have stakers rewarded tokens upon a purchase, VRF to disperse reward to staker weighted by amount staked
+Have listing transfers cost (in tokens then ?burnt)
+Have listing transfer fees in tokens or ETH?
+Burn or receive tokens when foreclosing/renewing? (burning helps everyone, being sent helps contract)
+Have stakers rewarded tokens upon a purchase, VRF to disperse reward to staker weighted by amount staked
 Creators burning tokens makes worth more which makes consumers have more which makes creators want to mint more
-Dynamically set reward rate per ETH by how many items are being purchased
+
 Adding Stake adds ?seconds, ?increases secs/TOP
-todo 
+
+
+Feedback system:
+1. Consumers staking tokens into a listing lower renewal rate, unstaking increases rate
+2. Consumers staking adds seconds to a listing (stream), unstaking..?
+
 
 Tokenomics: 
 Burnt when renewing listings
