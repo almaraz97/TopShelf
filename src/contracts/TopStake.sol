@@ -4,7 +4,11 @@ import "./TopToken.sol";
 import "./TopShelf.sol";
 
 contract TopStake{
+
     address private deployer;  // uint256 totalStaked;
+    TopShelf public topshelf;  // Admin
+    TopToken public token;
+
     mapping(uint256 => address[]) public itemStakeAddresses;  // itemId to itemStakeAddresses (user addresses that have invested)
     mapping(uint256 => uint256[]) public itemStakeAmounts;  // itemId to stakes (amounts users have invested) [Must be synced with itemStakeAddresses]
     mapping(uint256 => uint256[]) public vacantStakeSlots;  // Unstaked investors stay in stakers array which can be chosen for investor payouts, if new staker arrives, add them to old spot
@@ -14,8 +18,6 @@ contract TopStake{
     mapping(address => uint256) public stakerTotalStakes;  // Address to itemId to stakeIndex (number of investments user has)
     mapping(uint256 => uint256) public itemTotalStakers;  // itemId to number of staker
     mapping(uint256 => uint256) public itemTotalStake;  // itemId to number of stakes
-    TopShelf topshelf;
-    TopToken token;
 
     constructor (address _deployer, TopToken _token, TopShelf _topshelf){
         deployer = _deployer;
@@ -60,13 +62,17 @@ contract TopStake{
     function removeItemStake(uint256 _itemId, uint256 _amount) external returns(bool){ // if remove all stake just move last user to vacant spot
         uint256 stakeId = itemStakerId[_itemId][msg.sender];
         require(stakeId !=0, "Must stake before unstaking");
-        uint256 userStake = itemStakeAmounts[_itemId][itemStakerId[_itemId][msg.sender]]; //itemStakerAmount[_itemId][msg.sender];
+        
+        uint256 userStake = itemStakeAmounts[_itemId][itemStakerId[_itemId][msg.sender]];
         require(userStake >= _amount, "Cannot unstake more than is staked");
-        stakerTotalStaked[msg.sender] -= _amount;
-
-        itemTotalStake[_itemId] -= _amount;
         userStake -= _amount;  // does this change storage?  // leaseDuration -= _amount; //1 >> _amount;  // Un-stake penalty is half of stake leaseDuration reward (exploitable)
+        
+        stakerTotalStaked[msg.sender] -= _amount;
+        itemTotalStake[_itemId] -= _amount;
+
         if (userStake == 0){
+            // Put exiting staker
+            
             vacantStakeSlots[_itemId].push(stakeId);  // todo reentrancy vulnerability?
             itemTotalStakers[_itemId] -= 1;
             itemStakerId[_itemId][msg.sender] = 0;
