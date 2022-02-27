@@ -71,10 +71,11 @@ contract TopShelf {
         buyReward = _buyReward;  // Tokens rewarded to buyers
         defaultLeaseDuration = _defaultLeaseDuration;  // 604800 is 7 days
         renewalRatio = _renewalRatio;  // 1 token = 1 day  (Set higher for favoring consumers over producers)
+        topstake = new TopStake(msg.sender, _token, this);
     }
     // SETTERS
     function setTokenAddress(address _address) external onlyDeployer(){token = TopToken(_address);}
-    function setStakingAddress(address _address) external onlyDeployer(){topStake = TopStake(_address);}
+    function setStakingAddress(address _address) external onlyDeployer(){topstake = TopStake(_address);}
     function setTransferFee(uint256 _amount) external onlyDeployer(){transferFee = _amount;}
     function setListFee(uint256 _amount) external onlyDeployer(){listFee = _amount;}
     function setDefaultLeaseDuration(uint256 _seconds) external onlyDeployer(){defaultLeaseDuration = _seconds;}
@@ -100,7 +101,7 @@ contract TopShelf {
     function getBalance() public view returns (uint) {return address(this).balance;}
     function withdraw(uint256 _amount) public onlyDeployer() returns(bool){require(_amount<=address(this).balance); return payable(msg.sender).send(_amount) ;}
 
-    // FUNCTIONS   
+    // FUNCTIONS
     function mint(string memory _name, string memory _description, string memory _URI, uint256 _price, bool _paused,  uint256 _stock) external payable{ // notNullAddress(_to)
         require(msg.value >= listFee, "Must pay mint fee");
         address _to = msg.sender;
@@ -137,10 +138,9 @@ contract TopShelf {
         item.timesPurchased += 1;
 
         uint256 reward = (buyReward * msg.value);
-        if ((item.stakerAddresses.length - item.vacantStakeSlots.length)>1){  // Unstaking doesnt remove their address from stakeAddresses
-            rewardStakers(item, reward); 
-        }
-        token.mint(msg.sender, reward);  // Reward buyer
+        topstake.rewardStakers(_itemId, stakerReward, reward);
+
+        topstake.mint(msg.sender, reward);  // Reward buyer
 
         emit ItemPurchased(msg.sender, _itemId);
         return true;
@@ -204,9 +204,3 @@ contract TopShelf {
         _transfer(msg.sender, _to, _itemId);
     }
 }
-
-// interface TopStake {
-//     function rewardStakers(Item memory _item, uint256 _reward) public returns(uint256);
-//     function addItemStake(uint256 _itemId, uint256 _amount) public returns(bool);
-//     function removeItemStake(uint256 _itemId, uint256 _amount) public returns(bool);
-// }

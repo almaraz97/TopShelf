@@ -3,3 +3,4 @@
 src/__pycache__
 node_modules
 Stake.sol
+test/ganache*

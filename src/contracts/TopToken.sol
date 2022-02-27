@@ -18,6 +18,7 @@ contract TopToken {
     event MinterChanged(address indexed from, address indexed to);
 
     modifier onlyAdmin(){require(msg.sender==admin, 'Error, only admin'); _;}
+    modifier onlyTops(){require(msg.sender==admin, 'Error, only Top contracts'); _;}
     modifier notNullAddress(address _address){require(_address!=address(0), 'Error, using null address not allowed'); _;}
     constructor(string memory _name, string memory _symbol, uint256 _decimals, uint256 _fee){
         name = _name;
@@ -34,9 +35,9 @@ contract TopToken {
     // SET FUNCTIONS
     function setTransferFee(uint256 _fee) external onlyAdmin(){_transferFee = _fee;}
     // FUNCTIONS
-    function passMinterRole(address topshelf) public onlyAdmin() returns(bool){
-        admin = topshelf;
-        emit MinterChanged(msg.sender, topshelf);
+    function passMinterRole(address topstake) public onlyAdmin() returns(bool){
+        admin = topstake;
+        emit MinterChanged(msg.sender, topstake);
         return true;
     }
     function transfer(address to, uint256 value) public returns (bool) {
@@ -64,26 +65,21 @@ contract TopToken {
         return true;
     }
     function approve(address spender, uint256 value) public notNullAddress(spender) returns (bool) {
-//        require(spender != address(0));
         _allowed[msg.sender][spender] = value;
         emit Approval(msg.sender, spender, value);
         return true;
     }
     function increaseAllowance(address spender, uint256 addedValue) public notNullAddress(spender) returns (bool){
-//        require(spender != address(0));
         _allowed[msg.sender][spender] = (_allowed[msg.sender][spender] + addedValue);
         emit Approval(msg.sender, spender, _allowed[msg.sender][spender]);
         return true;
     }
     function decreaseAllowance(address spender, uint256 subtractedValue) public notNullAddress(spender) returns (bool){
-//        require(spender != address(0));
         _allowed[msg.sender][spender] = (_allowed[msg.sender][spender] - subtractedValue);  // If subtractedValue>approved?
         emit Approval(msg.sender, spender, _allowed[msg.sender][spender]);
         return true;
     }
-
     function _mint(address account, uint256 amount) internal notNullAddress(account){
-//        require(account != address(0), "Mint to the zero address"); // My change
         _totalSupply = _totalSupply + amount;
         _balances[account] = _balances[account] + amount;
         emit Transfer(address(0), account, amount);
@@ -93,13 +89,12 @@ contract TopToken {
     }
 
     function _burn(address account, uint256 amount) internal notNullAddress(account){
-//        require(account != address(0), "Mint to the zero address"); // My change
         require(amount <= _balances[account], "Error: Insufficient Funds");
-
         _totalSupply = _totalSupply - amount;
         _balances[account] = _balances[account] - amount;
         emit Transfer(account, address(0), amount);
     }
+    
     function burn(address account, uint256 amount) external onlyAdmin(){
         _burn(account, amount);
     }
