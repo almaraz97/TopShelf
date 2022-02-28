@@ -9,15 +9,14 @@ contract TopStake{
     TopShelf public topshelf;  // Admin
     TopToken public token;
 
-    mapping(uint256 => address[]) public itemStakeAddresses;  // itemId to itemStakeAddresses (user addresses that have invested)
-    mapping(uint256 => uint256[]) public itemStakeAmounts;  // itemId to stakes (amounts users have invested) [Must be synced with itemStakeAddresses]
-    mapping(uint256 => uint256[]) public vacantStakeSlots;  // Unstaked investors stay in stakers array which can be chosen for investor payouts, if new staker arrives, add them to old spot
-    mapping(uint256 => mapping(address => uint256)) public itemStakerId;  // itemId to address to stakeIndex (user's stakeId for their item investment)
+    mapping(uint256 => mapping(uint256 => address)) public itemStakeAddresses;  // itemId to stakeId to Addresses (user addresses that have invested)
+    mapping(uint256 => mapping(uint256 => uint256)) public itemStakeAmounts;  // itemId to to stakeId amount (amounts users have invested) [Must be synced with itemStakeAddresses]
+    mapping(uint256 => mapping(address => uint256)) public itemStakerId;  // itemId to address to stakeIndex (user's stakeId for their item investment) [This is used as the storage limiter for ISAs, everything after is not considered]
+    mapping(uint256 => uint256) public itemTotalStakers;  // itemId to number of staker
 
+    mapping(uint256 => uint256) public itemTotalStake;  // itemId to number of stakes 
     mapping(address => uint256) public stakerTotalStaked;  // ItemId to stakerAddress to stakeAmount (amount of investment user made)
     mapping(address => uint256) public stakerTotalStakes;  // Address to itemId to stakeIndex (number of investments user has)
-    mapping(uint256 => uint256) public itemTotalStakers;  // itemId to number of staker
-    mapping(uint256 => uint256) public itemTotalStake;  // itemId to number of stakes
 
     constructor (address _deployer, TopToken _token, TopShelf _topshelf){
         deployer = _deployer;
@@ -39,18 +38,9 @@ contract TopStake{
             itemStakeAmounts[_itemId][stakeId] += _amount;
         } else{  // New staker
             stakerTotalStakes[msg.sender] +=1;
-            itemTotalStakers[_itemId] += 1;
-            if (vacantStakeSlots[_itemId].length>1){  // There are empty slots, assign them to an old one
-                uint256 _vacantStakeSlot = vacantStakeSlots[_itemId][0];
-                delete vacantStakeSlots[0];
-                itemStakerId[_itemId][msg.sender] = _vacantStakeSlot;  // leaseDuration += _amount;  // (_amount*renewalRatio);
-                itemStakeAddresses[_itemId][_vacantStakeSlot] = msg.sender;
-                itemStakeAmounts[_itemId][_vacantStakeSlot] = _amount;
-            } else{  // No empty slots, push new slot
-                itemStakerId[_itemId][msg.sender] = itemStakeAddresses[_itemId].length;  // Assign user a stakeId
-                itemStakeAddresses[_itemId].push(msg.sender);
-                itemStakeAmounts[_itemId].push(_amount);  // leaseDuration += _amount;  // (_amount*renewalRatio);
-            }
+            itemTotalStakers[_itemId] += 1;  // Another unique staker is added
+            stakeId = itemTotalStakers[_itemId];  // DOES THIS UPDATE STORAGE??
+            itemStakeAddresses[_itemId][stakeId] = msg.sender;
         }
         stakerTotalStaked[msg.sender] += _amount;
         itemTotalStake[_itemId] += _amount;   // leaseDuration += _amount;  // (_amount*renewalRatio);
@@ -69,14 +59,19 @@ contract TopStake{
         
         stakerTotalStaked[msg.sender] -= _amount;
         itemTotalStake[_itemId] -= _amount;
-
+        uint256 thisItemTotalStakers = itemTotalStakers[_itemId];
+        
         if (userStake == 0){
-            // Put exiting staker
-            
-            vacantStakeSlots[_itemId].push(stakeId);  // todo reentrancy vulnerability?
-            itemTotalStakers[_itemId] -= 1;
-            itemStakerId[_itemId][msg.sender] = 0;
             stakerTotalStakes[msg.sender] -= 1;
+            if (stakeId == thisItemTotalStakers){  // Exiting staker is also last staker, just disregard them and after
+                itemStakerId[_itemId][msg.sender] = 0;
+            } else{  // Exiting staker leaves hole, fill it with last staker's info
+                address lastStaker = itemStakeAddresses[_itemId][thisItemTotalStakers];
+                itemStakeAddresses[_itemId][stakeId] = lastStaker;
+                itemStakeAmounts[_itemId][stakeId] = itemStakeAmounts[_itemId][thisItemTotalStakers];
+                itemStakerId[_itemId][lastStaker] = stakeId;
+            }
+            thisItemTotalStakers -= 1;  // Every stake after this index is disregarded
         }
         token.mint(msg.sender, _amount);
         emit StakeRemoved(msg.sender, _itemId, _amount);
@@ -88,6 +83,7 @@ contract TopStake{
             uint256 randomInt = uint(blockhash(block.number - 1)) % itemTotalStakers[_itemId]; //itemStakeAddresses[_itemId].length;
             address stakerAddress = itemStakeAddresses[_itemId][randomInt];
             uint256 stakerAmount = itemStakeAmounts[_itemId][randomInt];
+
             if (stakerAddress != msg.sender){
                 uint256 reward = (_stakerReward *_reward) * (stakerAmount/itemTotalStake[_itemId]);  // Reward proportional to other stakers and price of the item
                 token.mint(stakerAddress, reward);  // Reward curator in token
@@ -105,4 +101,24 @@ contract TopStake{
     //     address[] itemStakeAddresses;  // ItemId to stakers
     //     uint256[] itemStakeAddresses;  // ItemId to stakes (Must be synced with itemStakeAddresses)
     //     uint256[] vacantStakeSlots;  // Unstaked investors stay in stakers array which can be chosen for investor payouts, if new staker arrives, add them to old spot
+    // }
+
+    // itemTotalStakers[_itemId] -= 1;
+
+    // vacantStakeSlots[_itemId].push(stakeId);  // todo reentrancy vulnerability?
+    // itemStakerId[_itemId][msg.sender] = 0;
+    // stakerTotalStakes[msg.sender] -= 1;
+
+
+// ADD STAKE FUNCTION
+    // if (vacantStakeSlots[_itemId].length>1){  // There are empty slots, assign them to an old one
+    //     uint256 _vacantStakeSlot = vacantStakeSlots[_itemId][0];
+    //     delete vacantStakeSlots[0];
+    //     itemStakerId[_itemId][msg.sender] = _vacantStakeSlot;  // leaseDuration += _amount;  // (_amount*renewalRatio);
+    //     itemStakeAddresses[_itemId][_vacantStakeSlot] = msg.sender;
+    //     itemStakeAmounts[_itemId][_vacantStakeSlot] = _amount;
+    // } else{  // No empty slots, push new slot
+    //     itemStakerId[_itemId][msg.sender] = itemStakeAddresses[_itemId].length;  // Assign user a stakeId
+    //     itemStakeAddresses[_itemId].push(msg.sender);
+    //     itemStakeAmounts[_itemId].push(_amount);  // leaseDuration += _amount;  // (_amount*renewalRatio);
     // }
