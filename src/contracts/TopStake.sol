@@ -9,12 +9,15 @@ contract TopStake{
     TopShelf public topshelf;  // Admin
     TopToken public token;
 
-    mapping(uint256 => mapping(uint256 => address)) public itemStakeAddresses;  // itemId to stakeId to Addresses (user addresses that have invested)
-    mapping(uint256 => mapping(uint256 => uint256)) public itemStakeAmounts;  // itemId to to stakeId amount (amounts users have invested) [Must be synced with itemStakeAddresses]
+    struct Stake{
+        address Address;
+        uint256 Amount;
+    }
+    mapping(uint256 => mapping(uint256 => Stake)) public itemStake;   
     mapping(uint256 => mapping(address => uint256)) public itemStakerId;  // itemId to address to stakeIndex (user's stakeId for their item investment) [This is used as the storage limiter for ISAs, everything after is not considered]
     mapping(uint256 => uint256) public itemTotalStakers;  // itemId to number of staker
-
     mapping(uint256 => uint256) public itemTotalStake;  // itemId to number of stakes 
+
     mapping(address => uint256) public stakerTotalStaked;  // ItemId to stakerAddress to stakeAmount (amount of investment user made)
     mapping(address => uint256) public stakerTotalStakes;  // Address to itemId to stakeIndex (number of investments user has)
 
@@ -35,12 +38,12 @@ contract TopStake{
         token.burnFrom(msg.sender, _amount);
         uint256 stakeId = itemStakerId[_itemId][msg.sender];  // Find their stakeId for an item
         if (stakeId != 0){  // They've already staked
-            itemStakeAmounts[_itemId][stakeId] += _amount;
+            itemStake[_itemId][stakeId].Amount += _amount;
         } else{  // New staker
             stakerTotalStakes[msg.sender] +=1;
             itemTotalStakers[_itemId] += 1;  // Another unique staker is added
             stakeId = itemTotalStakers[_itemId];  // DOES THIS UPDATE STORAGE??
-            itemStakeAddresses[_itemId][stakeId] = msg.sender;
+            itemStake[_itemId][stakeId].Address = msg.sender;
         }
         stakerTotalStaked[msg.sender] += _amount;
         itemTotalStake[_itemId] += _amount;   // leaseDuration += _amount;  // (_amount*renewalRatio);
@@ -53,7 +56,7 @@ contract TopStake{
         uint256 stakeId = itemStakerId[_itemId][msg.sender];
         require(stakeId !=0, "Must stake before unstaking");
         
-        uint256 userStake = itemStakeAmounts[_itemId][itemStakerId[_itemId][msg.sender]];
+        uint256 userStake = itemStake[_itemId][stakeId].Amount;
         require(userStake >= _amount, "Cannot unstake more than is staked");
         userStake -= _amount;  // does this change storage?  // leaseDuration -= _amount; //1 >> _amount;  // Un-stake penalty is half of stake leaseDuration reward (exploitable)
         
@@ -61,14 +64,14 @@ contract TopStake{
         itemTotalStake[_itemId] -= _amount;
         uint256 thisItemTotalStakers = itemTotalStakers[_itemId];
         
-        if (userStake == 0){
+        if (userStake == 0){  // User is removing all of item stake
             stakerTotalStakes[msg.sender] -= 1;
             if (stakeId == thisItemTotalStakers){  // Exiting staker is also last staker, just disregard them and after
                 itemStakerId[_itemId][msg.sender] = 0;
             } else{  // Exiting staker leaves hole, fill it with last staker's info
-                address lastStaker = itemStakeAddresses[_itemId][thisItemTotalStakers];
-                itemStakeAddresses[_itemId][stakeId] = lastStaker;
-                itemStakeAmounts[_itemId][stakeId] = itemStakeAmounts[_itemId][thisItemTotalStakers];
+                address lastStaker = itemStake[_itemId][thisItemTotalStakers].Address;
+                itemStake[_itemId][stakeId].Address = lastStaker;
+                itemStake[_itemId][stakeId].Amount = itemStake[_itemId][thisItemTotalStakers].Amount;
                 itemStakerId[_itemId][lastStaker] = stakeId;
             }
             thisItemTotalStakers -= 1;  // Every stake after this index is disregarded
@@ -79,15 +82,15 @@ contract TopStake{
     }
 
     function rewardStakers(uint256 _itemId, uint256 _stakerReward, uint256 _reward) external onlyShelf() returns(bool){ // private?  // https://en.wikipedia.org/wiki/Modulo_operation#Performance_issues + https://medium.com/coinmonks/math-in-solidity-part-5-exponent-and-logarithm-9aef8515136e#ebd5
-        if (itemTotalStakers[_itemId] > 0){  // uint256 randomInt = 1;  // _item.itemStakeAddresses.length%((block.timestamp%10)+1);  // uint256 randomInt = (block.timestamp & ((1 << _item.itemStakeAddresses.length)-1))+1;  // TODO random int from oracle (0->n]
-            uint256 randomInt = uint(blockhash(block.number - 1)) % itemTotalStakers[_itemId]; //itemStakeAddresses[_itemId].length;
-            address stakerAddress = itemStakeAddresses[_itemId][randomInt];
-            uint256 stakerAmount = itemStakeAmounts[_itemId][randomInt];
+        uint256 totalStakers = itemTotalStakers[_itemId];
+        if (totalStakers > 1){  // uint256 randomInt = 1;  // _item.itemStakeAddresses.length%((block.timestamp%10)+1);  // uint256 randomInt = (block.timestamp & ((1 << _item.itemStakeAddresses.length)-1))+1;  // TODO random int from oracle (0->n]
+            uint256 randomInt = uint(blockhash(block.number - 1)) % totalStakers; //itemStakeAddresses[_itemId].length;
+            Stake storage randStake = itemStake[_itemId][randomInt];
+            address stakerAddress = randStake.Address;
+            uint256 stakerAmount = randStake.Amount;
 
-            if (stakerAddress != msg.sender){
-                uint256 reward = (_stakerReward *_reward) * (stakerAmount/itemTotalStake[_itemId]);  // Reward proportional to other stakers and price of the item
-                token.mint(stakerAddress, reward);  // Reward curator in token
-            }
+            uint256 reward = (_stakerReward *_reward) * (stakerAmount/itemTotalStake[_itemId]);  // Reward proportional to other stakers and price of the item
+            token.mint(stakerAddress, reward);  // Reward curator in token
         }
         return true;
     }

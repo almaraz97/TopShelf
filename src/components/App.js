@@ -7,23 +7,23 @@ import './App.css';
 import MarketplaceCard from './MarketplaceCard';
 import LoadContract from './LoadContract';
 // import { textAlign } from '@mui/system';
-import Card from '@mui/material/Card';
-import Row from 'react-bootstrap/Row'
-import Col from 'react-bootstrap/Col'
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-// import React from 'react';
+// import Card from '@mui/material/Card';
+// import Row from 'react-bootstrap/Row'
+// import Col from 'react-bootstrap/Col'
+// import CardActions from '@mui/material/CardActions';
+// import CardContent from '@mui/material/CardContent';
+// import CardMedia from '@mui/material/CardMedia';
+// import Button from '@mui/material/Button';
+// import Typography from '@mui/material/Typography';
+import ReactDOM from 'react-dom';
 
 class App extends Component {
   async componentDidMount() {
     await this.loadBlockchainData(this.props.dispatch)
   }
 
-
   async loadBlockchainData(dispatch) {
+
   //   function handleAccountsChanged(accounts) {
   //     console.log('Calling HandleChanged')
       
@@ -42,6 +42,7 @@ class App extends Component {
   //     }
   //     console.log('WalletAddress in HandleAccountChanged ='+walletAddress)
   // }
+
     App.web3Provider = new Web3.providers.HttpProvider('http://127.0.0.1:7545');  // switch with user network
     if(typeof window.ethereum !== 'undefined'){
       const web3 = new Web3(window.ethereum);
@@ -51,26 +52,6 @@ class App extends Component {
       //   console.error(error);
       // }
     
-      if (!window.ethereum.isConnected()){
-        window.ethereum
-          .request({ method: 'eth_requestAccounts' })
-          // .then(handleAccountsChanged)
-          .catch((error) => {
-            if (error.code === 4001) {
-              // EIP-1193 userRejectedRequest error
-              console.log('Please connect to MetaMask.');
-            } else {
-              console.error(error);
-            }
-          });
-      }
-      // .addEventListener('click', () => {
-      //   //Will Start the metamask extension
-      //   ethereum.request({ method: 'eth_requestAccounts' });
-      // });
-      // window.ethereum.on('accountsChanged', function (accounts) {
-      //   location.refresh()  // Time to reload your interface with accounts[0]!
-      // });
       // document.getElementById('connectButton').onClick = connect;
       // function connect() {
       //   console.log("Hello")
@@ -86,7 +67,22 @@ class App extends Component {
       //       }
       //     });
       // }
-      
+      if (!window.ethereum.isConnected()){
+        window.ethereum.request({ method: 'eth_requestAccounts' })
+          // .then(handleAccountsChanged)
+          .catch((error) => {
+            if (error.code === 4001) {
+              // EIP-1193 userRejectedRequest error
+              console.log('Please connect to MetaMask.');
+            } else {
+              console.error(error);
+            }
+          });
+      }
+
+      window.ethereum.on('accountsChanged', function () {
+        window.location.reload();  // Time to reload your interface with accounts[0]!
+      });
       const netId = await web3.eth.net.getId()
       const account = window.ethereum.selectedAddress  // await web3.eth.getAccounts()
       if (typeof account!=='undefined'){  //check if account is detected, then load balance&setStates, else push alert
@@ -99,200 +95,24 @@ class App extends Component {
       try {
         let [token, tokenName, topshelf, topshelfAddress, tokenBalance, topshelfBalance, totalListings, listfee, numStakes, foreclosureFee,
           stakerReward, buyReward, defaultLeaseDuration, renewalRatio] = await LoadContract(web3, netId, this.state.account, TopToken, TopShelf)
-        let [listings, expired] = [[], []]
-        for (let i=0 ; i<totalListings; i++) {
-          let item = await topshelf.methods.listings(i).call();  // find if delinquent client side
-          let expiresIn = (parseInt(item[6])+parseInt(item[7]))*1000 - Date.now();
-          if (expiresIn>0) {  //!delinquent  // let delinquent = await topshelf.methods.itemDelinquent(i).call();
-            listings.push(item);
-          } else{
-            expired.push(item);
-          }
-        }
-        let listingItems = null;
-        if (listings.length!==0){
-          listingItems = listings.map((item, index) =>
-          <Col key={index}>
-              <Card style={{minHeight: 500, maxHeight:500, maxWidth: 300, minWidth: 300}} className='my-1'>
-              <CardMedia  
-                sx={{ maxWidth: 200, maxHeight: 200, minWidth: 200, minHeight: 200 }}
-                component="img"
-                image={item[2]}
-                alt={item[2]}
-              />
-              <CardContent sx={{ maxHeight: 200, minHeight: 200 }}>
-                <Typography gutterBottom variant="h5" component="div">
-                {item[0]}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {item[1]}<br></br>
-                  Price: {web3.utils.fromWei(item[4], "ether")}<br></br>
-                  Lease Duration: {item[6]}<br></br>
-                  Date Created: {item[7]}<br></br>
-                  Expires in: {Math.round((((parseInt(item[6])+parseInt(item[7]))*1000) - Date.now())/60000)} seconds
-                </Typography>
-              </CardContent>
-              <CardActions className='border-top row'>  {/*sx={{ maxHeight: 150, minHeight: 150 }}*/}
-                <Button className='col-12' size="large" onClick={(e)=> {
-                  let itemPrice = item[4]
-                  this.state.topshelf.methods.buyItem(index).send({from:this.state.account, value:itemPrice})
-                }}>Purchase</Button>
-                {/* <form className='col-12' style={{float: 'inline'}} onSubmit={(e)=> {
-                    let amount = web3.utils.toWei(this.stake.value.toString(), 'ether')
-                    this.state.topshelf.methods.addItemStake(index, amount).send({from: this.state.account})
-                  }}>
-                  <div className='form-group row'>
-                    <input
-                      id='stake'
-                      type='number'
-                      step='0.01'
-                      className="col-8 ml-3"
-                      placeholder='Amount'
-                      required
-                      ref={(input) => {this.stake = input}}
-                    />
-                    <Button className='col-2 ml-2' type='submit' size="large">Invest</Button>
-                  </div>
-                </form> */}
-                {/* <div>
-                    <input
-                      id={'stake' + index}
-                      type='number'
-                      min='0.01'
-                      step='0.01'
-                      className="col-8 ml-3"
-                      placeholder='Amount'
-                      required
-                      // ref={(input) => {this.stake = input}}
-                    />
-                    <Button className='col-2 ml-2' size="large" onClick={(e)=> {
-                      let amount = web3.utils.toWei(document.getElementById('stake'+index).value.toString(), 'ether')
-                      this.state.topshelf.methods.addItemStake(index, amount).send({from: this.state.account})
-                    }}>Invest</Button>
-                  </div> */}
-              </CardActions>
-            </Card>
-          </Col>
-          );
-          listingItems = <Row xs={4} md={4} className="g-4">{listingItems}</Row>
-        } 
-        let expiredItems = null;
-        console.log(expired.length!==0)
-        if (expired.length!==0){
-          expiredItems = expired.map((item, index) =>
-          <Col key={index}>
-              <Card style={{minHeight: 500, maxHeight:500, maxWidth: 300, minWidth: 300}} className='my-1'>
-              <CardMedia  
-                sx={{ maxWidth: 200, maxHeight: 200, minWidth: 200, minHeight: 200 }}
-                component="img"
-                image={item[2]}
-                alt={item[2]}
-              />
-              <CardContent sx={{ maxHeight: 225, minHeight: 225 }}>
-                <Typography gutterBottom variant="h5" component="div">
-                {item[0]}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {item[1]}<br></br>
-                  Price: {web3.utils.fromWei(item[4].toString(), "ether")}
-                </Typography>
-              </CardContent>
-              <CardActions className='border-top row my-1'>  {/*sx={{ maxHeight: 150, minHeight: 150 }}*/}
-                <div>
-                    <input
-                      id={'stake' + index}
-                      type='number'
-                      min='0.01'
-                      step='0.01'
-                      className="col-8 ml-1"
-                      placeholder='Amount'
-                      required
-                    />
-                    <Button className='col-2 ml-2' size="large" onClick={(e)=> {
-                      let amount = web3.utils.toWei(document.getElementById('stake'+index).value.toString(), 'ether')
-                      this.state.topshelf.methods.renewItem(index, amount).send({from: this.state.account})
-                    }}>Renew</Button>
-                  </div>
-              </CardActions>
-            </Card>
-          </Col>
-          );
-          // console.log(expired.length, expiredItems)
-          expiredItems = <Row xs={4} md={4} className="g-4">{expiredItems}</Row>
-        }
-        let stakes = []
-        let i=0;
-        while (stakes.length<numStakes){ // Go through item index until all item stakes are retrieved
-          let stakeId = await topshelf.methods.getstakerItemStakeId(this.state.account, i).call(); //await
-          if (stakeId!==0){
-            let stakeAmount = await topshelf.methods.getItemStakeIdStake(i, stakeId).call(); //await
-            stakes.push({'index': i, 'item': listings[i], 'stakeAmount': stakeAmount});
-          }
-          i+=1;
-        }
-        let stakeItems = null;
-        if (stakes.length!==0){
-          stakeItems = stakes.map((itemStakeDict, index) =>
-          <Col key={index}>
-              <Card sx={{ maxWidth: 345, minWidth: 345 }}>
-              <CardMedia  
-                sx={{ maxWidth: 345, maxHeight: 345 }}
-                component="img"
-                image={itemStakeDict['item'][2]}
-                alt={itemStakeDict['item'][2]}
-              />
-              <CardContent>
-                <Typography gutterBottom variant="h5" component="div">
-                {itemStakeDict['item'][0]}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {itemStakeDict['item'][1]}<br></br>
-                  Price: {web3.utils.fromWei(itemStakeDict['item'][4], "ether")}
-                </Typography>
-              </CardContent>
-              {/* <CardActions className='border-top'> */}
-              <form onSubmit={(e)=> {
-                    let amount = web3.utils.toWei(this.stake.value.toString(), 'ether')
-                    this.state.topshelf.methods.addItemStake(index, amount).send({from: this.state.account})
-                  }}>
-                  <div className='form-group mr-sm-2'>
-                    <input
-                      id='stake'
-                      type='number'
-                      min='0'
-                      step='0.01'
-                      className="form-control form-control-md"
-                      placeholder='Item price'
-                      required
-                      ref={(input) => {this.price = input}}
-                    />
-                  <button size="large">Invest</button>
-                  </div>
-                </form>
-                <div>
-            </div>
-              {/* </CardActions> */}
-            </Card>
-            </Col>
-          );
-          stakeItems = <Row xs={2} md={3} className="g-4">{stakeItems}</Row>
-        }
-        // let [listingItems, listingsTotal, expiredItems, expiredTotal, stakeItems] = await MarketplaceCard(web3, topshelf, totalListings, numStakes);
+          console.log(numStakes)
 
-        // console.log(listingItems!== null);
+        let [listingItems, listingsTotal, expiredItems, expiredTotal, stakeItems, stakedTotal] = await MarketplaceCard(web3, topshelf, this.state.account, totalListings, numStakes);
+
         document.getElementById('balance').innerText = String(web3.utils.fromWei(tokenBalance)) + ' TOPS';
-        // document.getElementById('openListings').innerHTML = (listingItems!== null ? listingItems : '');
-        // document.getElementById('expiredListings').innerHTML = (expiredItems!== null ? expiredItems : '');
-        
-        this.setState({"token": token, "topshelf": topshelf, "topshelfAddress": topshelfAddress, "tokenBalance": web3.utils.fromWei(tokenBalance, 'ether'), "tokenName": tokenName, "topshelfBalance": topshelfBalance,
-                       "listingItems":listingItems, "totalListings": listings.length, "expiredItems": expiredItems, "totalExpiredItems": expired.length, //"stakeItems":stakeItems, "totalStakes":numStakes,
+        if(listingItems!== null){ReactDOM.render(listingItems, document.getElementById('openListings'))}
+        if(expiredItems!== null){ReactDOM.render(expiredItems, document.getElementById('expiredListings'))}
+        if(stakeItems!== null){ReactDOM.render(stakeItems, document.getElementById('stakedListings'))}
+
+        this.setState({"token": token, "topshelf": topshelf, "topshelfAddress": topshelfAddress, "tokenBalance": web3.utils.fromWei(tokenBalance, 'ether'), "tokenName": tokenName,// "topshelfBalance": topshelfBalance,
+                       "totalListings": listingsTotal, "totalExpiredItems": expiredTotal, "totalStakes": stakedTotal, 
                        "listfee": listfee, "stakerReward":stakerReward, "buyReward":buyReward, "defaultLeaseDuration":defaultLeaseDuration, "renewalRatio":renewalRatio,  "listfeeEth": Web3.utils.fromWei(String(listfee)),//stakerReward
                        })
       } catch (e){
         console.log('error', e)
         window.alert('Contracts not deployed to the current network')
       }
-    } else{  //if MetaMask not exists push alert
+    } else{  //if MetaMask does not exist push alert
       window.alert('Please install MetaMask')
     }
   }
@@ -304,8 +124,8 @@ class App extends Component {
       account: '',
       token: null,
       topshelf: null,
-      balance: 0,
-      topshelfAddress: null
+      topshelfAddress: null,
+      balance: 0
     }
   }
 
@@ -340,7 +160,7 @@ class App extends Component {
                   <br></br>
                     {this.state.totalListings} Open Listings
                     <br></br><br></br>
-                    <div id='openListings'>{this.state.listings}</div>
+                    <div id='openListings'></div>
                   </div>
                 </Tab>
                 <Tab eventKey="New" title="New">
@@ -417,19 +237,19 @@ class App extends Component {
                     </form>
                   </div>
                 </Tab>
-                {/* <Tab eventKey="Stakes" title="Stakes">
-                  <br></br>
-                    You have {this.state.numStakes} staked item(s)
+                <Tab eventKey="Stakes" title="Stakes">
+                  <br></br> {/* How many stakes the user has */}
+                    You have {this.state.totalStakes} staked item(s)
                     <br></br>
                     <br></br>
                     {this.state.stakeItems}
-                </Tab> */}
+                </Tab>
                 <Tab eventKey="Expired" title="Expired">
                   <div>
                   <br></br>
                     Expired listings: {this.state.totalExpiredItems}
                     <br></br><br></br>
-                    <div id='expiredListings'>{this.state.expiredItems}</div>
+                    <div id='expiredListings'></div>
                   </div>
                 </Tab>
                 <Tab eventKey="About" title="About">

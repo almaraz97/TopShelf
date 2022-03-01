@@ -59,7 +59,7 @@ contract TopShelf {
 
     // CONSTRUCTOR
     constructor(string memory _name, string memory _symbol, TopToken _token, uint256 _listFee, uint256 _transferFee,
-        uint256 _foreclosureFee,  uint256 _buyReward, uint256 _defaultLeaseDuration,
+        uint256 _foreclosureFee,  uint256 _stakerReward, uint256 _buyReward, uint256 _defaultLeaseDuration,
         uint256 _renewalRatio) { //uint256 _unstakePenalty,
         name = _name;
         symbol = _symbol;
@@ -68,10 +68,10 @@ contract TopShelf {
         listFee = _listFee;  // WEI ~10 dollars (higher = more good items but less overall)
         transferFee = _transferFee;
         foreclosureFee = _foreclosureFee;  // 10 tokens (set higher to slow down foreclosures, depends on inflation)
+        stakerReward = _stakerReward;
         buyReward = _buyReward;  // Tokens rewarded to buyers
         defaultLeaseDuration = _defaultLeaseDuration;  // 604800 is 7 days
         renewalRatio = _renewalRatio;  // 1 token = 1 day  (Set higher for favoring consumers over producers)
-        topstake = new TopStake(msg.sender, _token, this);
     }
     // SETTERS
     function setTokenAddress(address _address) external onlyDeployer(){token = TopToken(_address);}
@@ -138,8 +138,7 @@ contract TopShelf {
         item.timesPurchased += 1;
 
         uint256 reward = (buyReward * msg.value);
-        topstake.rewardStakers(_itemId, stakerReward, reward);
-
+        require(topstake.rewardStakers(_itemId, stakerReward, reward), "Must reward stakers");
         topstake.mint(msg.sender, reward);  // Reward buyer
 
         emit ItemPurchased(msg.sender, _itemId);

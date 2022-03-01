@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="B-lVAMX0ywGX5zVq6d2T" name="Page-1">
-        <mxGraphModel dx="971" dy="727" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="809" dy="756" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -8,6 +8,9 @@
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points"/>
                     </mxGeometry>
+                </mxCell>
+                <mxCell id="26" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="2" target="25">
+                    <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="2" value="&lt;u&gt;TopStake&lt;/u&gt;&lt;p style=&quot;line-height: 2.6&quot;&gt;&lt;/p&gt;&lt;ul&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Add Stake&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Remove Stake&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Reward Stakers&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Reward Buyers&lt;/li&gt;&lt;/ul&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
                     <mxGeometry x="360" y="280" width="160" height="160" as="geometry"/>
@@ -26,6 +29,52 @@
                 </mxCell>
                 <mxCell id="5" value="&lt;u style=&quot;line-height: 4.1&quot;&gt;TopToken&lt;/u&gt;&lt;p style=&quot;line-height: 2.6&quot;&gt;&lt;/p&gt;&lt;ul&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Mint&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Burn&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Transfer&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Approve&lt;/li&gt;&lt;/ul&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
                     <mxGeometry x="360" y="520" width="160" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="" style="edgeStyle=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="18" target="23" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="18" value="&lt;u&gt;TopStake&lt;/u&gt;&lt;br&gt;Stake reward" style="whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+                    <mxGeometry x="1130" y="460" width="100" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="" style="edgeStyle=none;html=1;" parent="1" source="20" target="22" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="&lt;u&gt;TopDAO&lt;br&gt;&lt;/u&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+                    <mxGeometry x="1010" y="20" width="100" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="22" target="18" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="22" target="23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="&lt;span style=&quot;font-size: 11px&quot;&gt;&lt;u&gt;TopShelf&lt;br&gt;&lt;/u&gt;&lt;/span&gt;Buy reward&lt;br&gt;&lt;p&gt;&lt;/p&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+                    <mxGeometry x="1010" y="200" width="100" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" value="&lt;u style=&quot;line-height: 4.1&quot;&gt;TopToken&lt;br&gt;&lt;/u&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+                    <mxGeometry x="890" y="460" width="100" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="25" value="&lt;u&gt;TopStake&lt;/u&gt;&lt;p style=&quot;line-height: 2.6&quot;&gt;&lt;/p&gt;&lt;ul&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Add Stake&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Remove Stake&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Reward Stakers&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Reward Buyers&lt;/li&gt;&lt;/ul&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+                    <mxGeometry x="360" y="520" width="160" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="31" target="33">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" value="&lt;u&gt;TopDAO&lt;/u&gt;&lt;p style=&quot;line-height: 2.6&quot;&gt;&lt;/p&gt;&lt;ul&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Set TopShelf Values&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Token Treasury&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Grant Tokens&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Withdraw Top ETH&lt;/li&gt;&lt;/ul&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+                    <mxGeometry x="1400" y="20" width="160" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="33" target="34">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1450" y="620" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="33" value="&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;u&gt;TopShelf&lt;/u&gt;&lt;/font&gt;&lt;p style=&quot;line-height: 2.6 ; font-size: 11px&quot;&gt;&lt;/p&gt;&lt;ul style=&quot;font-size: 11px&quot;&gt;&lt;li style=&quot;text-align: left&quot;&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;List&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left&quot;&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;Buy&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left&quot;&gt;Renew&lt;/li&gt;&lt;li style=&quot;text-align: left&quot;&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;Foreclose&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left&quot;&gt;Add Stake&lt;/li&gt;&lt;li style=&quot;text-align: left&quot;&gt;Remove Stake&lt;/li&gt;&lt;li style=&quot;text-align: left&quot;&gt;Reward Stakers&lt;/li&gt;&lt;li style=&quot;text-align: left&quot;&gt;Reward Buyers&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;/p&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+                    <mxGeometry x="1370" y="300" width="220" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="&lt;u style=&quot;line-height: 4.1&quot;&gt;TopToken&lt;/u&gt;&lt;p style=&quot;line-height: 2.6&quot;&gt;&lt;/p&gt;&lt;ul&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Mint&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Burn&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Transfer&lt;/li&gt;&lt;li style=&quot;text-align: left ; padding: 3px 0px&quot;&gt;Approve&lt;/li&gt;&lt;/ul&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+                    <mxGeometry x="1400" y="630" width="160" height="160" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>

@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import React from 'react';
 
 
-export default async function MarketplaceCard(web3, topshelf, totalListings, numStakes) {
+export default async function MarketplaceCard(web3, topshelf, account, totalListings, numStakes) {
   let listings = []
   let expired = []
   for (let i=0 ; i<totalListings; i++) {
@@ -130,14 +130,14 @@ export default async function MarketplaceCard(web3, topshelf, totalListings, num
       </Card>
     </Col>
     );
-    console.log(expired.length, expiredItems)
+    // console.log(expired.length, expiredItems)
     expiredItems = <Row xs={4} md={4} className="g-4">{expiredItems}</Row>
   }
   
   let stakes = []
   let i=0;
   while (stakes.length<numStakes){ // Go through item index until all item stakes are retrieved
-    let stakeId = await topshelf.methods.getstakerItemStakeId(this.state.account, i).call(); //await
+    let stakeId = await topshelf.methods.getstakerItemStakeId(account, i).call(); //await
     if (stakeId!==0){
       let stakeAmount = await topshelf.methods.getItemStakeIdStake(i, stakeId).call(); //await
       stakes.push({'index': i, 'item': listings[i], 'stakeAmount': stakeAmount});
@@ -145,52 +145,52 @@ export default async function MarketplaceCard(web3, topshelf, totalListings, num
     i+=1;
   }
   let stakeItems = null;
-  if (stakes.length!==0){
-    stakeItems = stakes.map((itemStakeDict, index) =>
-    <Col key={index}>
-        <Card sx={{ maxWidth: 345, minWidth: 345 }}>
-        <CardMedia  
-          sx={{ maxWidth: 345, maxHeight: 345 }}
-          component="img"
-          image={itemStakeDict['item'][2]}
-          alt={itemStakeDict['item'][2]}
-        />
-        <CardContent>
-          <Typography gutterBottom variant="h5" component="div">
-          {itemStakeDict['item'][0]}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {itemStakeDict['item'][1]}<br></br>
-            Price: {web3.utils.fromWei(itemStakeDict['item'][4], "ether")}
-          </Typography>
-        </CardContent>
-        {/* <CardActions className='border-top'> */}
-        <form onSubmit={(e)=> {
-              let amount = web3.utils.toWei(this.stake.value.toString(), 'ether')
-              this.state.topshelf.methods.addItemStake(index, amount).send({from: this.state.account})
-            }}>
-            <div className='form-group mr-sm-2'>
-              <input
-                id='stake'
-                type='number'
-                min='0'
-                step='0.01'
-                className="form-control form-control-md"
-                placeholder='Item price'
-                required
-                ref={(input) => {this.price = input}}
-              />
-            <button size="large">Invest</button>
-            </div>
-          </form>
-          <div>
-      </div>
-        {/* </CardActions> */}
-      </Card>
-      </Col>
-    );
-    stakeItems = <Row xs={2} md={3} className="g-4">{stakeItems}</Row>
-  }
-  console.log(expired.length, expiredItems)
-  return [listingItems, listings.length, expiredItems, expired.length, stakeItems];
+  // if (stakes.length!==0){
+  //   stakeItems = stakes.map((itemStakeDict, index) =>
+  //   <Col key={index}>
+  //       <Card sx={{ maxWidth: 345, minWidth: 345 }}>
+  //       <CardMedia  
+  //         sx={{ maxWidth: 345, maxHeight: 345 }}
+  //         component="img"
+  //         image={itemStakeDict['item'][2]}
+  //         alt={itemStakeDict['item'][2]}
+  //       />
+  //       <CardContent>
+  //         <Typography gutterBottom variant="h5" component="div">
+  //         {itemStakeDict['item'][0]}
+  //         </Typography>
+  //         <Typography variant="body2" color="text.secondary">
+  //           {itemStakeDict['item'][1]}<br></br>
+  //           Price: {web3.utils.fromWei(itemStakeDict['item'][4], "ether")}
+  //         </Typography>
+  //       </CardContent>
+  //       {/* <CardActions className='border-top'> */}
+  //       <form onSubmit={(e)=> {
+  //             let amount = web3.utils.toWei(this.stake.value.toString(), 'ether')
+  //             this.state.topshelf.methods.addItemStake(index, amount).send({from: this.state.account})
+  //           }}>
+  //           <div className='form-group mr-sm-2'>
+  //             <input
+  //               id='stake'
+  //               type='number'
+  //               min='0'
+  //               step='0.01'
+  //               className="form-control form-control-md"
+  //               placeholder='Item price'
+  //               required
+  //               ref={(input) => {this.price = input}}
+  //             />
+  //           <button size="large">Invest</button>
+  //           </div>
+    //       </form>
+    //       <div>
+    //   </div>
+    //     {/* </CardActions> */}
+    //   </Card>
+    //   </Col>
+    // );
+    // stakeItems = <Row xs={2} md={3} className="g-4">{stakeItems}</Row>
+  // }
+  // console.log(expired.length, expiredItems)
+  return [listingItems, listings.length, expiredItems, expired.length, stakeItems, stakes.length];
 }
