@@ -1,27 +1,34 @@
 
-export default async function LoadContract(web3, netId, account, TopToken, TopShelf) {
-  const token = new web3.eth.Contract(TopToken.abi, TopToken.networks[netId].address);
-  const tokenName = await token.methods.symbol().call();
-  const topshelfAddress = TopShelf.networks[netId].address;
-  const topshelf = new web3.eth.Contract(TopShelf.abi, topshelfAddress);
-  const tokenBalance = await token.methods.balanceOf(account).call();
-  const topshelfBalance = await web3.eth.getBalance(topshelfAddress); //topshelf.methods.etherBalanceOf(account).call()
-  const totalListings = await topshelf.methods.totalSupply().call(); 
-  const listfee = await topshelf.methods.listFee().call(); 
-  const numStakes = await topshelf.methods.stakerItemCount(account).call(); 
-  let foreclosureFee = await topshelf.methods.foreclosureFee().call();
-  foreclosureFee = web3.utils.fromWei(foreclosureFee, 'ether');
-  let stakerReward = 0;//await topshelf.methods.stakerReward().call();
-  let buyReward = await topshelf.methods.buyReward().call();
-  let defaultLeaseDuration = await topshelf.methods.defaultLeaseDuration().call();
-  let renewalRatio = await topshelf.methods.renewalRatio().call();
-  return [token, tokenName, topshelf, topshelfAddress, tokenBalance, topshelfBalance, totalListings, listfee, numStakes, foreclosureFee,
+
+export default async function LoadContract(ethers, signer, netId, account, TopToken, TopShelf) {
+  const token = new ethers.Contract(TopToken.networks[netId].address, TopToken.abi, signer);
+  const tokenName = (await token.functions.symbol())[0];
+  let tokenBalance = (await token.functions.balanceOf(account)).toString();
+  tokenBalance = ethers.utils.formatUnits(tokenBalance, 18).toString();
+
+  const topshelf = new ethers.Contract(TopShelf.networks[netId].address, TopShelf.abi, signer);
+  const totalListings = (await topshelf.functions.totalSupply()).toString(); 
+  let listfee = (await topshelf.functions.listFee()).toString(); 
+  listfee = ethers.utils.formatUnits(listfee, 18).toString();
+  let buyReward = (await topshelf.functions.buyReward()).toString();
+
+  let defaultLeaseDuration = (await topshelf.functions.defaultLeaseDuration()).toString();
+  let renewalRatio = (await topshelf.functions.renewalRatio()).toString();
+
+  let foreclosureFee = (await topshelf.functions.foreclosureFee()).toString();
+  foreclosureFee = ethers.utils.formatUnits(foreclosureFee, 18).toString();
+
+  let stakerReward = (await topshelf.functions.stakerReward()).toString();
+  // stakerReward = ethers.utils.formatUnits(stakerReward, 18).toString();
+  const numStakes = (await topshelf.functions.stakerTotalStakes(account)).toString(); 
+
+  return [token, tokenName, topshelf, 'topshelfAddress', tokenBalance, totalListings, listfee, numStakes, foreclosureFee,
     stakerReward, buyReward, defaultLeaseDuration, renewalRatio]
 }
 
 export async function get_item_info(contract, index, web3){
-  let item = await contract.methods.listings(index).call();
-  let owner = await contract.methods.ownerOf(index).call();
+  let item = await contract.methods.listings(index);
+  let owner = await contract.methods.ownerOf(index);
   let _name = await item.name;
   let description = await item.description;
   let URI = await item.URI;

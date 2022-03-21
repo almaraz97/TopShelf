@@ -2,28 +2,23 @@ import { Tabs, Tab } from 'react-bootstrap'
 import TopShelf from '../abis/TopShelf.json'
 import TopToken from '../abis/TopToken.json'
 import React, { Component } from 'react';
-import Web3 from 'web3';
 import './App.css';
 import MarketplaceCard from './MarketplaceCard';
 import LoadContract from './LoadContract';
-// import { textAlign } from '@mui/system';
-// import Card from '@mui/material/Card';
-// import Row from 'react-bootstrap/Row'
-// import Col from 'react-bootstrap/Col'
-// import CardActions from '@mui/material/CardActions';
-// import CardContent from '@mui/material/CardContent';
-// import CardMedia from '@mui/material/CardMedia';
-// import Button from '@mui/material/Button';
-// import Typography from '@mui/material/Typography';
 import ReactDOM from 'react-dom';
+import { ethers } from "ethers";
+import { textTransform } from '@mui/system';
 
-class App extends Component {
-  async componentDidMount() {
-    await this.loadBlockchainData(this.props.dispatch)
-  }
 
-  async loadBlockchainData(dispatch) {
+// function startApp(provider) {
+//   if (provider !== window.ethereum) {
+//     console.error('Do you have multiple wallets installed?');
+//   }
+// }
 
+// function handleChainChanged(_chainId) {
+//   // window.location.reload();
+// }
   //   function handleAccountsChanged(accounts) {
   //     console.log('Calling HandleChanged')
       
@@ -42,10 +37,9 @@ class App extends Component {
   //     }
   //     console.log('WalletAddress in HandleAccountChanged ='+walletAddress)
   // }
+    //   let chainId = web3.ethereum.getId //////////////////// todo
+    //   console.log(chainId)
 
-    App.web3Provider = new Web3.providers.HttpProvider('http://127.0.0.1:7545');  // switch with user network
-    if(typeof window.ethereum !== 'undefined'){
-      const web3 = new Web3(window.ethereum);
       // try {  // Connect metamask, no metamask, reject metamask, wrong network (and switch)
       //   window.ethereum.request({ method: 'eth_requestAccounts' });
       // } catch (error) {
@@ -67,50 +61,73 @@ class App extends Component {
       //       }
       //     });
       // }
-      if (!window.ethereum.isConnected()){
-        window.ethereum.request({ method: 'eth_requestAccounts' })
-          // .then(handleAccountsChanged)
-          .catch((error) => {
-            if (error.code === 4001) {
-              // EIP-1193 userRejectedRequest error
-              console.log('Please connect to MetaMask.');
-            } else {
-              console.error(error);
-            }
-          });
-      }
+            // if (!window.ethereum.isConnected()){
+      //   window.ethereum.request({ method: 'eth_requestAccounts' })
+      //     // .then(handleAccountsChanged)
+      //     .catch((error) => {
+      //       if (error.code === 4001) {
+      //         // EIP-1193 userRejectedRequest error
+      //         console.log('Please connect to MetaMask.');
+      //       } else {
+      //         console.error(error);
+      //       }
+      //     });
+      // }
 
-      window.ethereum.on('accountsChanged', function () {
-        window.location.reload();  // Time to reload your interface with accounts[0]!
-      });
-      const netId = await web3.eth.net.getId()
-      const account = window.ethereum.selectedAddress  // await web3.eth.getAccounts()
-      if (typeof account!=='undefined'){  //check if account is detected, then load balance&setStates, else push alert
-        const balance = await web3.eth.getBalance(account)
-        this.setState({account: account, balance: balance, web3: web3})
+      // window.ethereum.on('accountsChanged', function () {
+      //   window.location.reload();  // Time to reload your interface with accounts[0]!
+      // });
+
+class App extends Component {
+
+  async componentDidMount() {
+    await this.loadBlockchainData(this.props.dispatch)
+  }
+
+  async loadBlockchainData(dispatch) {
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
+    await provider.send("eth_requestAccounts", []);
+    provider.on("network", (newNetwork, oldNetwork) => {if (oldNetwork) {window.location.reload();}});  // Reload on network change
+    const signer = provider.getSigner()
+    let account = await signer.getAddress();
+    
+    let signedTopShelf = null;
+    if(typeof provider !== 'undefined'){
+      if (account!==null){  //check if account is detected, then load balance&setStates, else push alert
+        // const mainnetProvider = new ethers.getDefaultProvider(await ethers.providers.getNetwork("homestead"));
+        let name = null//await mainnetProvider.lookupAddress(account);
+        if (name===null){name = account.slice(0, 8)+'..'};
+        document.getElementById('account').innerText = name;
+
+        let netId = (await provider.getNetwork()).chainId;
+        console.log(account)
+        if(netId === 1337){
+          let [token, tokenName, topshelf, , tokenBalance, totalListings, listfee, numStakes, foreclosureFee,
+          stakerReward, buyReward, defaultLeaseDuration, renewalRatio] = await LoadContract(ethers, signer, netId, account, TopToken, TopShelf)
+          let signedTopShelf = topshelf.connect(signer)
+
+          let [listingItems, listingsTotal, expiredItems, expiredTotal, stakeItems, stakedTotal] = await MarketplaceCard(ethers, topshelf, account, totalListings, numStakes);
+          
+          document.getElementById('balance').innerText = tokenBalance + ' TOPS';
+          if(listingItems!== null){ReactDOM.render(listingItems, document.getElementById('openListings'))}
+          if(expiredItems!== null){ReactDOM.render(expiredItems, document.getElementById('expiredListings'))}
+          if(stakeItems!== null){ReactDOM.render(stakeItems, document.getElementById('stakedListings'))}
+
+          this.setState({"account": account,
+                          "token": token, "tokenName": tokenName, "topshelf": signedTopShelf, 
+                          "totalListings": listingsTotal, "totalExpiredItems": expiredTotal, "totalStakes": stakedTotal, 
+                          "listfee": listfee, "stakerReward":stakerReward, "buyReward": buyReward, "defaultLeaseDuration":defaultLeaseDuration, "renewalRatio":renewalRatio,  
+                          "listfeeEth": listfee, //stakerReward
+                          "tokenBalance": tokenBalance
+                          })
+        } else{
+          // console.log('error', e)
+          window.alert('Contracts not deployed to the current network')
+        }
+        // window.TopShelf = signedTopShelf;
       }else{
         window.alert('Please sign in with MetaMask')
-      }
-      // in try block, load contracts
-      try {
-        let [token, tokenName, topshelf, topshelfAddress, tokenBalance, topshelfBalance, totalListings, listfee, numStakes, foreclosureFee,
-          stakerReward, buyReward, defaultLeaseDuration, renewalRatio] = await LoadContract(web3, netId, this.state.account, TopToken, TopShelf)
-          console.log(numStakes)
-
-        let [listingItems, listingsTotal, expiredItems, expiredTotal, stakeItems, stakedTotal] = await MarketplaceCard(web3, topshelf, this.state.account, totalListings, numStakes);
-
-        document.getElementById('balance').innerText = String(web3.utils.fromWei(tokenBalance)) + ' TOPS';
-        if(listingItems!== null){ReactDOM.render(listingItems, document.getElementById('openListings'))}
-        if(expiredItems!== null){ReactDOM.render(expiredItems, document.getElementById('expiredListings'))}
-        if(stakeItems!== null){ReactDOM.render(stakeItems, document.getElementById('stakedListings'))}
-
-        this.setState({"token": token, "topshelf": topshelf, "topshelfAddress": topshelfAddress, "tokenBalance": web3.utils.fromWei(tokenBalance, 'ether'), "tokenName": tokenName,// "topshelfBalance": topshelfBalance,
-                       "totalListings": listingsTotal, "totalExpiredItems": expiredTotal, "totalStakes": stakedTotal, 
-                       "listfee": listfee, "stakerReward":stakerReward, "buyReward":buyReward, "defaultLeaseDuration":defaultLeaseDuration, "renewalRatio":renewalRatio,  "listfeeEth": Web3.utils.fromWei(String(listfee)),//stakerReward
-                       })
-      } catch (e){
-        console.log('error', e)
-        window.alert('Contracts not deployed to the current network')
       }
     } else{  //if MetaMask does not exist push alert
       window.alert('Please install MetaMask')
@@ -120,11 +137,9 @@ class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      web3: 'undefined',
       account: '',
       token: null,
       topshelf: null,
-      topshelfAddress: null,
       balance: 0
     }
   }
@@ -143,7 +158,7 @@ class App extends Component {
           <b>TopShelf</b>
         </a>
         <div>
-          <button className='mr-2' id="account">{this.state.account.slice(0, 8)}..</button>
+          <button className='mr-2' id="account">Connect</button>
           <button className='mr-2' id="balance">Balance: 0</button>
         </div>
         </nav>
@@ -169,15 +184,23 @@ class App extends Component {
                     Mint listing:
                     <br></br><br></br>
                     <form onSubmit={(e) => { 
-                      // get values
                       e.preventDefault()
                       let name = this.name.value
                       let description = this.description.value
                       let URI = this.URI.value
                       let price = this.price.value
-                      price = Web3.utils.toWei(String(price)) //convert to wei
+                      price = ethers.utils.parseEther(price, 'ether');
                       let stock = this.stock.value
-                      this.state.topshelf.methods.mint(name, description, URI, price, false, stock).send({from:this.state.account, value:this.state.listfee}) //deposit(amount)
+                      let value = ethers.utils.parseEther(this.state.listfee).toString();
+                      let tx = this.state.topshelf.functions.mint(name, description, URI, price, false, stock, 
+                                                                  {from:this.state.account, value: value})
+                      // console.log(tx, typeof tx) // TODO capture event emitted from listing item to give the seller feedback
+                      // let rc = await tx;
+                      // const event = rc.events.find(event => event.event === 'Transfer');
+                      // const [from, to, val] = event.args;
+                      // console.log(from, to, val);
+                      // window.alert("Your listing has been created: Item ID " + String(val))
+                      // window.location.reload()
                     }}>
                       <div className='form-group mr-sm-2'>
                         <input
@@ -238,11 +261,11 @@ class App extends Component {
                   </div>
                 </Tab>
                 <Tab eventKey="Stakes" title="Stakes">
-                  <br></br> {/* How many stakes the user has */}
+                  <br></br>
                     You have {this.state.totalStakes} staked item(s)
                     <br></br>
                     <br></br>
-                    {this.state.stakeItems}
+                    <div id='stakedListings'></div>
                 </Tab>
                 <Tab eventKey="Expired" title="Expired">
                   <div>
@@ -256,20 +279,27 @@ class App extends Component {
                   <br></br>
                 <u><h5>Sellers</h5></u>
                 <ol>
-                  <li>Pay ETH fee to list an item (NFT)</li>
-                  <li>Buyers pay to purchase you items</li>
+                  <li>Pay ETH fee to list an item</li>
+                  <li>Buyers pay to purchase your items</li>
+                  <li>Buyers are minted an NFT (optional)</li>
                   <li>Renew listings by burning TOPs</li>
                 </ol><br></br>
                 <u><h5>Buyers</h5></u>
                 <ol>
                   <li>Purchase items with ETH</li>
                   <li>Get rewarded TOPs for purchases</li>
-                  <li>Stake TOPs within listings for more TOPs</li>
+                  <li>Get rewarded NFTs for use with other services</li>
+                </ol><br></br>
+                <u><h5>Stakers</h5></u>
+                <ol>
+                  <li>Stake TOPs into items you love</li>
+                  <li>Get rewarded TOPs when others purchase the item</li>
+                  <li>Get an NFT representing your stake to use elsewhere</li>
                 </ol>
                     <br></br>
                     Made by Almaraz.eth<br></br><br></br>
                   <div>
-                    <button type='submit' className='btn btn-primary'>LinkedIn</button>
+                    <a href='https://www.linkedin.com/in/alejandro-almaraz-307a899b/' rel="noopener noreferrer" target="_blank" className='btn btn-primary'>LinkedIn</a>
                   </div>
                 </Tab>
                 <Tab eventKey="Settings" title="Settings">
@@ -291,23 +321,3 @@ class App extends Component {
 }
 
 export default App;
-
-// Add modal, seconds till foreclosure, foreclosing, 
-
-/*<form onSubmit={(e)=> {
-                  let amount = web3.utils.toWei(this.stake.value.toString(), 'ether')
-                  this.state.topshelf.methods.addItemStake(index, amount).send({from: this.state.account})
-                }}>
-                <div className='form-group mr-sm-2'>
-                  <input
-                    id='stake'
-                    type='number'
-                    step='0.01'
-                    className="form-control form-control-md"
-                    placeholder='Item price'
-                    required
-                    ref={(input) => {this.price = input}}
-                  />
-                <Button size="large">Invest</Button>
-                </div>
-              </form> */

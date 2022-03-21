@@ -16,14 +16,16 @@ Technical details
 - Delinquent listings can be foreclosed on by others (?pay in tokens)
 - Staking TOPs grants users 
 
+TODOs:
+Be able to list items for USDC or other currencies
+
 
 Ideas:
 Have listing transfers cost (in tokens then ?burnt)
 Have listing transfer fees in tokens or ETH?
 Burn or receive tokens when foreclosing/renewing? (burning helps everyone, being sent helps contract)
 Have stakers rewarded tokens upon a purchase, VRF to disperse reward to staker weighted by amount staked
-Creators burning tokens makes worth more which makes consumers have more which makes creators want to mint more
-
+Add routing contract so listers can mint NFTs to users who buy through router
 Adding Stake adds ?seconds, ?increases secs/TOP
 
 
@@ -37,3 +39,5 @@ Burnt when renewing listings
 Burnt when foreclosing delinquent listings
 Locked when staking into listings
 
+Issues:
+After a listing expires, renewal must cover time after expiration. This is akin to being behind/missing payments
