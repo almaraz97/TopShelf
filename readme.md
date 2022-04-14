@@ -1,15 +1,15 @@
-
+# TopShelf
 Selling Process
 1. Pay ETH fee to list an item (NFT)
 2. Renew listings with TOPs
 3. Buyers pay you for owning NFTs
 
-Buying Process
+## Buying Process
 1. Buy items with ETH (own the NFT)
 2. Be rewarded TOPs for purchases
 3. Stake TOPs within listings
 
-Technical details
+## Technical details
 - Listing items is by paying ETH to TopShelf contract
 - Listings have a default leasing period (ei. 1 week)
 - Sellers renew by burning TOPs that grant a proportionate number of seconds until lease is over (ie 1k for 1 week)
@@ -17,7 +17,7 @@ Technical details
 - Staking TOPs grants users 
 
 
-Ideas:
+## Ideas
 Have item transfers cost (in tokens then ?burnt)
 todo Have item transfer fees in tokens or ETH?
 todo Burn or receive tokens when foreclosing/renewing? (burning helps everyone, being sent helps contract)
