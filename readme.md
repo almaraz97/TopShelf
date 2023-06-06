@@ -1,5 +1,5 @@
 # TopShelf
-Selling Process
+## Selling Process
 1. Pay ETH fee to list an item (NFT)
 2. Renew listings with TOPs
 3. Buyers pay you for owning NFTs
